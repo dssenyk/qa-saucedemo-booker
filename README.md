@@ -1,12 +1,12 @@
-# Автотести SauceDemo і Restful-Booker
+# Automated tests for SauceDemo and Restful-Booker
 
-UI-перевірки [SauceDemo](https://www.saucedemo.com) і API-перевірки [Restful-Booker](https://restful-booker.herokuapp.com/apidoc) на Playwright + TypeScript. Один раннер, два проєкти: `ui` (Chromium) і `api` (`request`, без браузера).
+UI checks for [SauceDemo](https://www.saucedemo.com) and API checks for [Restful-Booker](https://restful-booker.herokuapp.com/apidoc), written with Playwright and TypeScript. One runner, two projects: `ui` (Chromium) and `api` (`request`, no browser).
 
-Локальний прогін 24.11.2026: **22 тести, код виходу 0**. З них 14 перевіряють робочу поведінку й проходять звичайно. Ще 8 у `known-defects` свідомо падають на асерті правильної поведінки: це відкриті дефекти продукту. `test.fail(...)` тримає їх як expected failure, тому CI не червоніє, поки баг живий. Коли продукт виправлять, той самий тест стає звичайним зеленим.
+Local run on 24 Nov 2026: **22 tests, exit code 0**. Fourteen of them check working behavior and pass normally. The other eight live in `known-defects` and fail on purpose on the assertion of correct behavior: these are open product defects. `test.fail(...)` keeps them as expected failures, so CI stays green while the bug is present. When the product is fixed, the same test becomes an ordinary passing test.
 
-## Як запустити
+## How to run
 
-Потрібні Node.js 20+ і мережа до обох стендів.
+You need Node.js 20+ and network access to both stands.
 
 ```bash
 npm ci
@@ -14,7 +14,7 @@ npx playwright install chromium
 npm test
 ```
 
-Окремо:
+Separately:
 
 ```bash
 npm run test:ui
@@ -24,211 +24,211 @@ npm run report
 npm run typecheck
 ```
 
-Облікові дані публічні й лежать у `src/config.ts`:
+Credentials are public and live in `src/config.ts`:
 
-- SauceDemo: `standard_user` / `secret_sauce` (також `locked_out_user`, `problem_user`, `error_user`)
+- SauceDemo: `standard_user` / `secret_sauce` (also `locked_out_user`, `problem_user`, `error_user`)
 - Restful-Booker: `admin` / `password123`
 
-Секрети в CI не потрібні. Стенд бронювань спільний, тому кожне створене бронювання тести видаляють у `finally`, а ім'я гостя унікальне.
+CI does not need secrets. The booking stand is shared, so every created booking is deleted in `finally`, and the guest name is unique.
 
-Податок у чекауті пораховано з живого замовлення, а не з догадки: рюкзак $29.99 + ліхтарик $9.99 дають Item total $39.98, Tax $3.20, Total $43.18. Це 8% з округленням half-up до цента. Тест чекауту читає ціни з кошика і перевіряє суму за тією самою формулою.
+Checkout tax is calculated from the live order, not from a guess: backpack $29.99 + bike light $9.99 give an item total of $39.98, tax $3.20, total $43.18. That is 8% rounded half-up to the cent. The checkout test reads prices from the cart and checks the totals with the same formula.
 
-## Що покрито
+## What is covered
 
-### UI, користувач `standard_user`
+### UI, user `standard_user`
 
-| Тест | Що перевіряє |
+| Test | What it checks |
 | --- | --- |
-| Успішний логін | Після входу відкривається каталог Products |
-| Каталог | 6 товарів: унікальні назви, опис, ціна `$d.dd`, різні фото без `sl-404`. Картка Backpack збігається з плиткою, кнопка Back to products повертає в каталог |
-| Сортування за назвою | Name A→Z і Z→A, підпис активного пункту і порядок рядків |
-| Сортування за ціною | Price low→high і high→low. Однаковим цінам $15.99 дозволено лишатися в стабільному порядку |
-| Кошик | Два товари, бейдж 2, кількості 1, видалення одного, бейдж 1, Continue Shopping повертає правильні стани кнопок |
-| Чекаут | Форма, огляд (оплата SauceCard #31337, доставка Free Pony Express, суми), «Thank you for your order!», порожній кошик |
-| Сесія | Logout повертає форму. Прямий `/inventory.html` без сесії показує помилку доступу і не показує товарів |
+| Successful login | After sign-in the Products catalog opens |
+| Catalog | 6 products: unique names, a description, a price of `$d.dd`, distinct photos with no `sl-404`. The Backpack detail card matches the tile, and Back to products returns to the catalog |
+| Sort by name | Name A→Z and Z→A, the active option label, and the row order |
+| Sort by price | Price low→high and high→low. Equal prices of $15.99 may keep a stable order |
+| Cart | Two products, badge 2, quantities of 1, removing one, badge 1, Continue Shopping restores the correct button labels |
+| Checkout | The form, the overview (payment SauceCard #31337, shipping Free Pony Express, totals), "Thank you for your order!", and an empty cart |
+| Session | Logout returns to the form. A direct `/inventory.html` without a session shows an access error and no products |
 
-### UI, негативні й граничні
+### UI, negative and boundary
 
-- Порожнє ім'я, потім порожній пароль.
-- Невідомий пароль і `locked_out_user`. Обидва лишаються поза каталогом.
-- Чекаут без First Name, потім без Last Name, потім без Postal Code. Кожне поле зупиняє крок, URL лишається `checkout-step-one`.
+- An empty username, then an empty password.
+- An unknown password and `locked_out_user`. Both stay out of the catalog.
+- Checkout with no First Name, then no Last Name, then no Postal Code. Each missing field stops the step, and the URL stays on `checkout-step-one`.
 
 ### API
 
-Один сценарій кроками: `POST /auth` → `POST /booking` → `GET` → `PUT` → `GET` перевіряє нові поля → `DELETE` → `GET` повертає 404.
+One scenario, step by step: `POST /auth` → `POST /booking` → `GET` → `PUT` → `GET` checks the new fields → `DELETE` → `GET` returns 404.
 
-Негативні:
+Negative cases:
 
-- неправильний пароль не видає токен (`reason: Bad credentials`);
-- тіло лише з `firstname` не створює бронювання;
-- `PUT` і `DELETE` без токена відповідають 403, запис після цього не змінений; `GET /booking/0` відповідає 404.
+- a wrong password does not issue a token (`reason: Bad credentials`);
+- a body that contains only `firstname` does not create a booking;
+- `PUT` and `DELETE` without a token return 403, and the record is unchanged afterwards; `GET /booking/0` returns 404.
 
-Токен передається як `Cookie: token=...`. Успішне видалення в офіційному apidoc описане як **201 Created**, тому життєвий цикл очікує саме 201, а доказом видалення є наступний 404.
+The token is sent as `Cookie: token=...`. A successful delete is documented in the official apidoc as **201 Created**, so the lifecycle expects 201, and the proof of deletion is the following 404.
 
-## Що свідомо не покрито
+## Left out on purpose
 
-- `performance_glitch_user`: це штучна затримка, не функціональна перевірка.
-- `visual_user`, скріншотні порівняння, мобільна верстка.
-- Firefox і WebKit. У локальному прогоні й у CI лише Chromium, щоб job лишався коротким і збігався з тим, на чому шукались дефекти.
-- About, Dynamic Catalog, соцмережі у футері.
-- XML-відповіді Restful-Booker і заголовок `Authorization: Basic`. Документація дозволяє його поряд із Cookie; покритий Cookie.
-- `PATCH /booking/:id` і фільтри `GET /booking?firstname=`. Зміну в завданні закриває `PUT`.
-- Навантаження, гонки між двома клієнтами, пентест.
-- Бонусний конвеєр «текст кейса → Playwright-тест». У ці 4 години він не входить.
+- `performance_glitch_user`: this is an artificial delay, not a functional check.
+- `visual_user`, screenshot comparisons, and mobile layout.
+- Firefox and WebKit. The local run and CI use Chromium only, so the job stays short and matches the browser where the defects were found.
+- About, Dynamic Catalog, and the social links in the footer.
+- Restful-Booker XML responses and the `Authorization: Basic` header. The documentation allows it alongside Cookie; Cookie is the one covered.
+- `PATCH /booking/:id` and the `GET /booking?firstname=` filters. The update required by the assignment is covered by `PUT`.
+- Load, races between two clients, and penetration testing.
+- The bonus pipeline "test case text → Playwright test". It is outside the 4-hour limit.
 
-Повтори ввімкнені лише в CI (`retries: 2`): Heroku інколи прокидається повільно. Локально повтори вимкнені, щоб флак не маскувався.
+Retries are enabled only in CI (`retries: 2`): Heroku sometimes wakes up slowly. Locally retries are off, so a flake is not hidden.
 
 ## CI
 
-[`.github/workflows/tests.yml`](.github/workflows/tests.yml) запускає `npx playwright test` на кожен `push` і `pull_request`.
+[`.github/workflows/tests.yml`](.github/workflows/tests.yml) runs `npx playwright test` on every `push` and `pull_request`.
 
-Після прогону, і якщо тести впали теж, у артефакт `playwright-report` (7 днів) потрапляють:
+After the run, including when tests fail, the `playwright-report` artifact (kept for 7 days) contains:
 
-- HTML-звіт `playwright-report/`
-- `test-results/` — JUnit, скріншоти й трейси невдалих тестів
+- the HTML report in `playwright-report/`
+- `test-results/`: JUnit, plus screenshots and traces of failed tests
 
-Локально звіт відкривається через `npm run report`. У списку консолі тести з `tests/**/known-defects.spec.ts` позначені `✘`: асерт правильної поведінки не зійшовся. Це expected failure, код виходу лишається 0. Несподіване падіння будь-якого іншого тесту робить прогін червоним.
+Locally the report opens with `npm run report`. In the console list, tests from `tests/**/known-defects.spec.ts` are marked `✘`: the assertion of correct behavior did not match. That is an expected failure, and the exit code stays 0. An unexpected failure of any other test turns the run red.
 
-## Знайдені дефекти
+## Defects found
 
-Усі відтворені 24.11.2026 на публічних стендах. Автотести з тими самими id лежать у `tests/ui/known-defects.spec.ts` і `tests/api/known-defects.spec.ts`.
+All of them were reproduced on 24 Nov 2026 on the public stands. Automated tests with the same ids live in `tests/ui/known-defects.spec.ts` and `tests/api/known-defects.spec.ts`.
 
-### BUG-UI-1. У `problem_user` у всіх товарів одне фото
+### BUG-UI-1. `problem_user` shows the same photo for every product
 
-**Серйозність:** середня. Каталог читається, але товари не розрізняються візуально.
+**Severity:** medium. The catalog is readable, but the products cannot be told apart visually.
 
-**Кроки:**
+**Steps:**
 
-1. Відкрити https://www.saucedemo.com.
-2. Увійти як `problem_user` / `secret_sauce`.
-3. Подивитися на фото шести карток.
+1. Open https://www.saucedemo.com.
+2. Sign in as `problem_user` / `secret_sauce`.
+3. Look at the photos of the six cards.
 
-**Очікуваний результат:** у кожного товару своє зображення, як у `standard_user` (рюкзак, ліхтарик, футболка, худі, бодік, червона футболка).
+**Expected result:** each product has its own image, as for `standard_user` (backpack, bike light, t-shirt, fleece jacket, onesie, red t-shirt).
 
-**Фактичний результат:** у всіх шести `img` атрибут `src` містить `sl-404`. Текст `alt` при цьому правильний: ламається файл картинки, не підпис.
+**Actual result:** the `src` of all six `img` elements contains `sl-404`. The `alt` text is still correct: the image file is broken, not the label.
 
-### BUG-UI-2. Сортування для `problem_user` не змінює ні селект, ні список
+### BUG-UI-2. Sorting for `problem_user` changes neither the select nor the list
 
-**Серйозність:** висока для цього користувача. Контрол виглядає робочим.
+**Severity:** high for this user. The control looks like it works.
 
-**Кроки:**
+**Steps:**
 
-1. Увійти як `problem_user` / `secret_sauce`.
-2. У «Sort products» вибрати Price (high to low).
+1. Sign in as `problem_user` / `secret_sauce`.
+2. In "Sort products", choose Price (high to low).
 
-**Очікуваний результат:** значення селекта `hilo`, активний підпис «Price (high to low)», ціни за спаданням, першим іде Fleece Jacket за $49.99.
+**Expected result:** the select value is `hilo`, the active label is "Price (high to low)", prices are descending, and the Fleece Jacket at $49.99 is first.
 
-**Фактичний результат:** значення лишається `az`, підпис «Name (A to Z)», першим лишається Sauce Labs Backpack за $29.99. Name (Z to A) і Price (low to high) так само не чіпають порядок. У `standard_user` ті самі пункти працюють.
+**Actual result:** the value stays `az`, the label stays "Name (A to Z)", and the Sauce Labs Backpack at $29.99 stays first. Name (Z to A) and Price (low to high) also leave the order untouched. For `standard_user` the same options work.
 
-### BUG-UI-3. У `error_user` бейдж і кнопки не збігаються з кошиком
+### BUG-UI-3. For `error_user` the badge and the buttons do not match the cart
 
-**Серйозність:** висока. Користувач бачить 3 товари, а оформлює 6.
+**Severity:** high. The user sees 3 products and checks out 6.
 
-**Кроки:**
+**Steps:**
 
-1. Відкрити сайт у чистому сеансі (без чужих cookie).
-2. Увійти як `error_user` / `secret_sauce`.
-3. Натиснути Add to cart по черзі на всіх шести товарах.
-4. Прочитати підписи кнопок і число на бейджі.
-5. Відкрити кошик.
+1. Open the site in a clean session (no cookies from another user).
+2. Sign in as `error_user` / `secret_sauce`.
+3. Click Add to cart on all six products, one after another.
+4. Read the button labels and the badge number.
+5. Open the cart.
 
-**Очікуваний результат:** кожна кнопка стає Remove, бейдж показує 6, у кошику шість позицій.
+**Expected result:** every button becomes Remove, the badge shows 6, and the cart has six lines.
 
-**Фактичний результат:**
+**Actual result:**
 
-- Remove з'являється лише в Backpack, Bike Light і Onesie.
-- Bolt T-Shirt, Fleece Jacket і Test.allTheThings() T-Shirt (Red) лишаються з написом Add to cart.
-- Бейдж показує 3.
-- У кошику лежать усі 6 товарів.
+- Remove appears only on Backpack, Bike Light, and Onesie.
+- Bolt T-Shirt, Fleece Jacket, and Test.allTheThings() T-Shirt (Red) still say Add to cart.
+- The badge shows 3.
+- The cart contains all 6 products.
 
-### BUG-API-1. Невірний пароль відповідає HTTP 200
+### BUG-API-1. A wrong password responds with HTTP 200
 
-**Серйозність:** середня. Клієнт, який дивиться лише на статус, вважає логін успішним.
+**Severity:** medium. A client that looks only at the status treats the login as successful.
 
-**Кроки:**
+**Steps:**
 
 1. `POST https://restful-booker.herokuapp.com/auth`
-2. Заголовок `Content-Type: application/json`
-3. Тіло: `{"username":"admin","password":"wrong-password"}`
+2. Header `Content-Type: application/json`
+3. Body: `{"username":"admin","password":"wrong-password"}`
 
-**Очікуваний результат:** 401 і жодного токена.
+**Expected result:** 401 and no token.
 
-**Фактичний результат:** 200 і `{"reason":"Bad credentials"}`. Токена немає. Порожнє тіло `{}` дає ту саму відповідь.
+**Actual result:** 200 and `{"reason":"Bad credentials"}`. There is no token. An empty body `{}` gets the same response.
 
-### BUG-API-2. Неповне бронювання валить сервер п'ятсоткою
+### BUG-API-2. An incomplete booking crashes the server with a 500
 
-**Серйозність:** висока. Невалідний запит не має ставати 500.
+**Severity:** high. An invalid request should not become a 500.
 
-**Кроки:**
+**Steps:**
 
-1. `POST /booking` з `Content-Type` і `Accept: application/json`
-2. Тіло: `{"firstname":"Only"}`
+1. `POST /booking` with `Content-Type` and `Accept: application/json`
+2. Body: `{"firstname":"Only"}`
 
-**Очікуваний результат:** 400. В apidoc обов'язкові `firstname`, `lastname`, `totalprice`, `depositpaid`, `bookingdates.checkin`, `bookingdates.checkout`. Бронювання не створюється.
+**Expected result:** 400. The apidoc requires `firstname`, `lastname`, `totalprice`, `depositpaid`, `bookingdates.checkin`, and `bookingdates.checkout`. No booking is created.
 
-**Фактичний результат:** 500 і текст `Internal Server Error`. `bookingid` у відповіді немає.
+**Actual result:** 500 and the text `Internal Server Error`. The response has no `bookingid`.
 
-### BUG-API-3. Неіснуюча дата зберігається як `0NaN-aN-aN`
+### BUG-API-3. An impossible date is stored as `0NaN-aN-aN`
 
-**Серйозність:** висока. У базу потрапляє зіпсоване бронювання.
+**Severity:** high. A corrupted booking is written to the database.
 
-**Кроки:**
+**Steps:**
 
-1. `POST /booking` з валідними ім'ям, ціною і депозитом.
+1. `POST /booking` with a valid name, price, and deposit.
 2. `bookingdates.checkin` = `not-a-date`, `checkout` = `also-bad`.
 
-**Очікуваний результат:** 400, запис не створюється.
+**Expected result:** 400, and the record is not created.
 
-**Фактичний результат:** 200. У збереженому бронюванні обидві дати дорівнюють `0NaN-aN-aN`.
+**Actual result:** 200. In the stored booking both dates are `0NaN-aN-aN`.
 
-Поруч перевірено ту саму дірку у валідації, окремим тестом не зафіксовано:
+The same validation hole was checked nearby and is not locked in as its own test:
 
-- заїзд `2026-05-10` і виїзд `2026-05-01` приймаються з 200;
-- `totalprice: -5` приймається з 200;
-- ім'я і прізвище з одного пробілу зберігаються як порожні рядки.
+- check-in `2026-05-10` and check-out `2026-05-01` are accepted with 200;
+- `totalprice: -5` is accepted with 200;
+- a first name and a last name of a single space are stored as empty strings.
 
-### BUG-API-4. Рядкова ціна зберігається як `null`
+### BUG-API-4. A string price is stored as `null`
 
-**Серйозність:** висока. Специфікація каже, що `totalprice` має тип Number.
+**Severity:** high. The specification says `totalprice` has type Number.
 
-**Кроки:**
+**Steps:**
 
-1. `POST /booking` з валідними полями, крім `totalprice`.
-2. Передати `"totalprice": "ten"`.
+1. `POST /booking` with valid fields except `totalprice`.
+2. Send `"totalprice": "ten"`.
 
-**Очікуваний результат:** 400, запис не створюється.
+**Expected result:** 400, and the record is not created.
 
-**Фактичний результат:** 200, у бронюванні `totalprice` дорівнює `null`.
+**Actual result:** 200, and `totalprice` on the booking is `null`.
 
-### BUG-API-5. Видалення відсутнього бронювання відповідає 405
+### BUG-API-5. Deleting a missing booking responds with 405
 
-**Серйозність:** середня. Клієнт не може відрізнити «немає такого id» від «метод заборонений».
+**Severity:** medium. A client cannot tell "no such id" from "method not allowed".
 
-**Кроки:**
+**Steps:**
 
-1. `POST /auth` з `admin` / `password123`, взяти токен.
-2. `DELETE /booking/0` із заголовком `Cookie: token=<token>`.
+1. `POST /auth` with `admin` / `password123` and take the token.
+2. `DELETE /booking/0` with the header `Cookie: token=<token>`.
 
-**Очікуваний результат:** 404. `GET /booking/0` уже відповідає 404.
+**Expected result:** 404. `GET /booking/0` already returns 404.
 
-**Фактичний результат:** 405 Method Not Allowed.
+**Actual result:** 405 Method Not Allowed.
 
-### BUG-API-6. `additionalneeds` у специфікації обов'язковий, API його не вимагає
+### BUG-API-6. `additionalneeds` is required in the specification, and the API does not require it
 
-**Серйозність:** низька. Розходиться документація і сервер, щасливий сценарій від цього не ламається.
+**Severity:** low. The documentation and the server disagree, and the happy path still works.
 
-**Кроки:**
+**Steps:**
 
-1. `POST /booking` без поля `additionalneeds`, решта обов'язкових полів валідна.
+1. `POST /booking` without `additionalneeds`. The other required fields are valid.
 
-**Очікуваний результат:** відмова. В apidoc у CreateBooking поле позначене як не optional.
+**Expected result:** a rejection. In the apidoc CreateBooking example the field is not marked optional.
 
-**Фактичний результат:** 200, у створеному бронюванні поля `additionalneeds` немає.
+**Actual result:** 200, and the created booking has no `additionalneeds` field.
 
-Окремого expected-failure тесту на це немає: це розбіжність документації, а не зіпсовані дані.
+There is no separate expected-failure test for this: it is a documentation mismatch, not corrupted data.
 
-## Це не баг відносно контракту
+## Within the contract, not a defect
 
-Успішний `DELETE /booking/:id` у прикладі apidoc описаний як `HTTP/1.1 201 Created`. Живий стенд відповідає так само, тілом `Created`. Життєвий цикл очікує 201 і перевіряє видалення наступним `GET` зі статусом 404.
+A successful `DELETE /booking/:id` is shown in the apidoc example as `HTTP/1.1 201 Created`. The live stand answers the same way, with the body `Created`. The lifecycle expects 201 and proves the deletion with the next `GET`, which returns 404.
 
-`GET /ping` у тій самій документації теж `201 Created`. Ендпоінт у набір не входив.
+`GET /ping` is also `201 Created` in that documentation. The endpoint is not part of this suite.
