@@ -1,0 +1,23 @@
+{
+  "name": "qa-saucedemo-booker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright checks for SauceDemo and Restful-Booker",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --project=ui",
+    "test:api": "playwright test --project=api",
+    "test:headed": "playwright test --project=ui --headed",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  }
+}
